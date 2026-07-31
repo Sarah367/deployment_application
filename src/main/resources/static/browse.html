@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deployment App - Manifest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/browse.css">
+</head>
+<body>
+
+<div class="ribbon-bar">
+    <div class="navy"></div>
+    <div class="parchment"></div>
+    <div class="red"></div>
+</div>
+
+<div class="manifest">
+    <div class="manifest-header">
+        <div class="manifest-title">
+            <span class="eyebrow">Field Transfer</span>
+            Select Files to Share
+        </div>
+        <div id="back-btn-container"></div>
+    </div>
+    <div id="path-display"></div>
+    <ul id="file-list"></ul>
+
+</div>
+<div id = "share-bar" class = "share-bar">
+    <span id = "selection-count" class="selection-count">0 items selected</span>
+    <button id="start-share-btn" class="start-share-btn" disabled>Start Sharing</button>
+</div>
+<footer> Thank You For Serving Our Country. </footer>
+
+<script>
+    let currentPath = null;
+    let history = [];
+    let selectedPaths = new Set(); // prevent duplicate paths when tracking
+
+    async function loadRoots() {
+        const response = await fetch('/api/browse/roots');
+        const roots = await response.json(); // convert to object/array.
+        currentPath = null;
+        history = [];
+        renderList(roots);
+        document.getElementById('path-display').textContent = 'SELECT SOURCE DRIVE';
+        document.getElementById('back-btn-container').innerHTML = ''; // back button currently empty.
+    }
+
+    async function loadFolder(path) {
+        const response = await fetch('/api/browse?path=' + encodeURIComponent(path));
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            alert('Error: ' + errorText);
+            return;
+        }
+        const items= await response.json();
+        if (currentPath != null) {
+            history.push(currentPath); // keep track of our path for back button
+        }
+        currentPath = path; // then set the currentPath
+        renderList(items);
+        document.getElementById('path-display').textContent = path;
+        renderBackButton();
+    }
+
+    function renderList(items) {
+        const list = document.getElementById('file-list');
+        list.innerHTML = '';
+
+        if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent = '- EMPTY -';
+            list.appendChild(empty);
+            return;
+        }
+
+        items.forEach(item => {
+            const li = document.createElement('li');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'select-checkbox';
+            checkbox.checked = selectedPaths.has(item.path);
+            checkbox.onchange = () => {
+                if (checkbox.checked) {
+                    selectedPaths.add(item.path); // if its checked, add it
+                } else {
+                    selectedPaths.delete(item.path);
+                }
+                updateShareBar();
+            };
+            const checkboxLabel = document.createElement('label');
+            checkboxLabel.className = 'checkbox-hit-area';
+            checkboxLabel.appendChild(checkbox);
+            checkboxLabel.onclick = (event) => {
+                event.stopPropagation();
+            };
+
+            const nameWrap = document.createElement('div'); // will bundle tag + name together here.
+            nameWrap.className = 'item-name';
+
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+
+            const nameText = document.createElement('span');
+            nameText.className = 'name-text';
+            nameText.textContent = item.name;
+
+            if (item.directory) {
+                li.classList.add('folder');
+                tag.textContent = 'DIR'; // specifically for directories
+                li.onclick = () => loadFolder(item.path); // when clicked, invoke loadFolder method.
+            } else {
+                const ext = item.name.includes('.') ? item.name.split('.').pop().toUpperCase() : 'FILE';
+                tag.textContent = ext.slice(0,4); // capped at 4 chars, probably change.
+            }
+
+
+            nameWrap.appendChild(tag);
+            nameWrap.appendChild(nameText);
+            const size = document.createElement('span');
+            size.className = 'size';
+            size.textContent = formatSize(item.sizeBytes);
+            // wrap size and checkbox
+            const rightSide = document.createElement('div');
+            rightSide.className = 'item-right';
+            rightSide.appendChild(size);
+            rightSide.appendChild(checkboxLabel);
+
+
+            li.appendChild(nameWrap); // tag + name
+            li.appendChild(rightSide); // checkbox
+            list.appendChild(li);
+        });
+    }
+    // helper function to convert bytes to readable format.
+    function formatSize(bytes) {
+        if (bytes === 0) return '';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes, unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length -1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        return size.toFixed(unitIndex === 0 ? 0 : 1)  + ' ' + units[unitIndex];
+    }
+    function renderBackButton() {
+        const container = document.getElementById('back-btn-container');
+        container.innerHTML = '';
+
+        const btn = document.createElement('button');
+        btn.id = 'back-btn';
+
+        if (history.length > 0) { // we generate back button if path is greater than 0
+             btn.textContent = '← Back';
+             btn.onclick = () => {
+                 const previousPath = history.pop();
+                 currentPath = null;
+                 loadFolder(previousPath);
+             };
+
+        } else { // if its 0 then we know we are on drives initial page
+            btn.textContent = '← Drives';
+            btn.onclick = () => loadRoots();
+        }
+        container.appendChild(btn);
+    }
+
+    function updateShareBar() {
+        const count = selectedPaths.size;
+        document.getElementById('selection-count').textContent =
+            count + (count === 1 ? ' item selected' : ' items selected'); // plural or not plural depending on if paths is greater than 1 or equal to 1
+
+        const startBtn = document.getElementById('start-share-btn');
+        startBtn.disabled = count === 0; // if count is 0, disable share button.
+
+    }
+
+    document.getElementById('start-share-btn').addEventListener('click', async() => {
+      const response = await fetch('/api/share', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({paths: [...selectedPaths]})
+      });
+      const message = await response.text();
+      alert(message);
+    });
+
+
+    loadRoots();
+    updateShareBar();
+
+
+
+</script>
+</body>

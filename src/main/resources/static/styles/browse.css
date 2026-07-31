@@ -1,0 +1,301 @@
+:root {
+    /*primary color is navy rn*/
+    --navy: #1C2541;
+    --panel: #232C4D;
+    --border: #3A4570;
+    --parchment: #EDE6D6;
+    --muted: #8D95B8;
+    --red: #9B2C2C;
+    --gold: #B8935B;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --mono: 'IBM Plex Mono', Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+/*background is navy*/
+body {
+    background: var(--navy);
+    color: var(--parchment);
+    font-family: var(--serif);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.ribbon-bar {
+    display: flex;
+    height: 6px;
+}
+
+.ribbon-bar div {
+    flex: 1;
+}
+
+/*3 color stripe at top is: navy/blue, white, red*/
+.ribbon-bar .navy {
+    background: var(--navy);
+    border-top: 1px solid var(--border);
+}
+.ribbon-bar .parchment {
+    background: var(--parchment);
+}
+.ribbon-bar .red {
+    background: var(--red);
+}
+/* grows and fills the space.*/
+.manifest {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+    flex: 1;
+    width: 100%;
+}
+
+.manifest-header {
+    display:flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid var(--red);
+    padding-bottom: 16px;
+    margin-bottom: 4px;
+}
+
+.manifest-title {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--parchment);
+}
+
+.manifest-title .eyebrow {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 4px;
+}
+
+#back-btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+#back-btn:hover, #back-btn:focus-visible {
+    border-color: var(--gold);
+    color: var(--gold);
+    outline: none;
+}
+/* using word break for long file names might change later*/
+#path-display {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    padding: 12px 2px;
+    word-break: break-all;
+    min-height: 16px;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    font-family: var(--serif);
+}
+
+.item-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+}
+/* truncate long file names with ...*/
+.item-name span.name-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space:  nowrap;
+}
+
+.tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    flex-shrink: 0;
+}
+
+li.folder {
+    cursor: pointer;
+}
+/* if its folder then make it gold*/
+li.folder .tag {
+    color: var(--gold);
+    border-color: var(--gold);
+}
+
+li.folder:hover {
+    background: var(--panel);
+}
+
+li.folder:hover .name-text {
+    color: var(--gold);
+}
+/* displays size of the actual file in nice format*/
+.size {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    flex-shrink: 0;
+    padding-left: 12px;
+}
+/* if folder doesn't have anything in it */
+.empty-state {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    padding: 24px 4px;
+    text-align: center;
+}
+
+footer {
+    text-align: center;
+    padding: 20px 24px 28px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    color: white;
+    border-top: 1px solid var(--border);
+}
+/*if person doesn't want animations/transitions on interface.*/
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important;}
+}
+
+/* checkbox and size */
+.item-right {
+    display:flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.select-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.select-checkbox:hover {
+    border-color: var(--gold);
+}
+
+.select-checkbox:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+.select-checkbox:checked {
+    background: var(--gold);
+    border-color: var(--gold);
+}
+
+.select-checkbox:checked::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 9px;
+    border: solid var(--navy);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkbox-hit-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    margin: -10px;
+    cursor: pointer;
+}
+
+.share-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+}
+
+.selection-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.start-share-btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border-radius: 2px;
+    border: 1px solid var(--gold);
+    background: var(--gold);
+    color: var(--navy);
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.start-share-btn:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.start-share-btn:disabled {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+}
+
