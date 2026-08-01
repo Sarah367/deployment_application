@@ -60,4 +60,19 @@ public class FileBrowserService {
 
         return items;
     }
+
+    public FileItem describePath(String path) {
+        File file = new File(path);
+
+        if (!file.exists()) {
+            throw new IllegalArgumentException("Path no longer exists: " + path);
+        }
+
+        return new FileItem(
+                file.getName(),
+                file.getAbsolutePath(),
+                file.isDirectory(),
+                file.isDirectory() ? 0 : file.length()
+        );
+    }
 }

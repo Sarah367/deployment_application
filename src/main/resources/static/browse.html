@@ -31,7 +31,18 @@
     <button id="start-share-btn" class="start-share-btn" disabled>Start Sharing</button>
 </div>
 <footer> Thank You For Serving Our Country. </footer>
+<div id="share-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-title">
+            <span class="eyebrow">Sharing Active</span>
+            Scan to Download
+        </div>
+        <img id="qr-image" class="qr-image" alt="QR code to share URL"/>
+        <div id="share-url-text" class="share-url-text"></div>
+        <button id="stop-share-btn" class="stop-share-btn">Stop Sharing</button>
 
+    </div>
+</div>
 <script>
     let currentPath = null;
     let history = [];
@@ -180,13 +191,43 @@
     }
 
     document.getElementById('start-share-btn').addEventListener('click', async() => {
-      const response = await fetch('/api/share', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({paths: [...selectedPaths]})
-      });
-      const message = await response.text();
-      alert(message);
+      try {
+          const response = await fetch('/api/share', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({paths: [...selectedPaths]})
+          });
+          if (!response.ok) {
+              const errorText = await response.text();
+              alert('Error starting share: ' + errorText);
+              return;
+          }
+          await showShareModal();
+
+      } catch (error) {
+          alert('Could not reach the server. Please check your connection and try again.');
+      }
+    });
+
+    async function showShareModal() {
+        try { // get url text
+            const urlResponse = await fetch('/api/qr/share-url');
+            const shareUrl = await urlResponse.text();
+            document.getElementById('share-url-text').textContent = shareUrl;
+        } catch (error) {
+            document.getElementById('share-url-text').textContent = 'Could not detect network address.';
+        }
+
+        // load qr image
+        document.getElementById('qr-image').src = '/api/qr/image?t=' + Date.now();
+        document.getElementById('share-modal').classList.remove('hidden');
+    }
+
+    document.getElementById('stop-share-btn').addEventListener('click', async() => {
+        await fetch('/api/share/stop', {
+            method: 'POST'
+        });
+        document.getElementById('share-modal').classList.add('hidden');
     });
 
 
