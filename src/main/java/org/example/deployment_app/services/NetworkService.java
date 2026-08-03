@@ -28,14 +28,13 @@ public class NetworkService {
                     if (addr.getHostAddress().contains(":")) {
                         continue;
                     }
-
                     return addr.getHostAddress();
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Unable to inspect network interfaces", e);
+            throw new RuntimeException("Unable to inspect network interfaces..", e);
         }
-        throw new RuntimeException("No usable local IPv4 address found.");
+        throw new RuntimeException("No usable address found!");
 
     }
 }
