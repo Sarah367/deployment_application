@@ -15,11 +15,9 @@ import java.net.Inet4Address;
 @RequestMapping("/api/share")
 public class ShareController {
     private final ShareSessionService shareSessionService;
-    private final NetworkService networkService;
 
-    public ShareController(ShareSessionService shareSessionService, NetworkService networkService) {
+    public ShareController(ShareSessionService shareSessionService) {
         this.shareSessionService = shareSessionService;
-        this.networkService = networkService;
     }
 
     @PostMapping
@@ -27,7 +25,6 @@ public class ShareController {
         shareSessionService.startSharing(request.paths());
         //System.out.println(networkService.getLocalNetworkIp()//);
         return ResponseEntity.ok("Sharing started with " + request.paths().size() + " item(s).");
-
     }
 
     @PostMapping("/stop")

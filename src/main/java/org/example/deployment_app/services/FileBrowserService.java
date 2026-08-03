@@ -5,9 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.tags.Param;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+
+import static java.io.File.separator;
 
 @Service
 public class FileBrowserService {
@@ -31,7 +35,7 @@ public class FileBrowserService {
     */
     public List<FileItem> listDirectory(String path) {
         File dir = new File(path);
-        // make sure its actually a folder and that path is real.
+        // make sure its actually a folder and and that path is real.
         if (!dir.exists() || !dir.isDirectory()) {
             throw new IllegalArgumentException("Not a valid directory: " + path);
         }
@@ -74,5 +78,18 @@ public class FileBrowserService {
                 file.isDirectory(),
                 file.isDirectory() ? 0 : file.length()
         );
+    }
+
+    public boolean isPathWithinSharedPaths(String requestedPath, List<String> sharedPaths) {
+        Path requested = Paths.get(requestedPath).toAbsolutePath().normalize();
+
+        for (String filePath : sharedPaths) {
+            Path sharedPath = Paths.get(filePath).toAbsolutePath().normalize();
+            if (requested.equals(sharedPath) || requestedPath.startsWith(sharedPath + separator)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
