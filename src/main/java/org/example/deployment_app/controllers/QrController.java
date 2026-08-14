@@ -51,6 +51,6 @@ public class QrController {
 
     private String buildShareUrl() {
         String ip = networkService.getLocalNetworkIp();
-        return "http://" + ip + ":8080/share";
+        return "http://" + ip + ":8080/share.html";
     }
 }
