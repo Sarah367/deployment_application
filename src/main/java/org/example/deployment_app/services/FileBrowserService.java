@@ -85,7 +85,7 @@ public class FileBrowserService {
 
         for (String filePath : sharedPaths) {
             Path sharedPath = Paths.get(filePath).toAbsolutePath().normalize();
-            if (requested.equals(sharedPath) || requestedPath.startsWith(sharedPath + separator)) {
+            if (requested.equals(sharedPath) || requested.startsWith(sharedPath + separator)) {
                 return true;
             }
         }

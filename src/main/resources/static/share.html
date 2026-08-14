@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deployment App - Manifest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/browse.css">
+    <link rel="stylesheet" href="/styles/share.css">
+
+</head>
+<body>
+
+<div class="ribbon-bar">
+    <div class="navy"></div>
+    <div class="parchment"></div>
+    <div class="red"></div>
+</div>
+
+<div class="manifest">
+    <div class="manifest-header">
+        <div class="manifest-title">
+            <span class="eyebrow">Field Transfer</span>
+            Shared With You
+        </div>
+        <div id="back-btn-container"></div>
+    </div>
+    <div id="path-display"></div>
+    <ul id="file-list"></ul>
+
+</div>
+<footer> Thank You For Serving Our Country. </footer>
+<div id="video-modal" class="modal-overlay hidden">
+    <div class="modal-box video-modal-box">
+        <span id="video-name"></span>
+        <video id="video-player" class="video-player" controls playsinline></video>
+        <button id="download-video-btn" class="start-share-btn">Download</button>
+        <button id="close-video-btn" class = "stop-share-btn">Close</button>
+    </div>
+</div>
+
+
+<script>
+    let currentPath = null;
+    let history = [];
+
+    async function loadSharedItems() {
+        const response = await fetch('/api/public-share/items');
+        const roots = await response.json(); // convert to object/array.
+        currentPath = null;
+        history = [];
+        renderList(roots);
+        document.getElementById('back-btn-container').innerHTML = ''; // back button currently empty.
+    }
+
+    async function loadFolder(path) {
+        const response = await fetch('/api/public-share?path=' + encodeURIComponent(path));
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            alert('Error: ' + errorText);
+            return;
+        }
+        const items= await response.json();
+        if (currentPath != null) {
+            history.push(currentPath); // keep track of our path for back button
+        }
+        currentPath = path; // then set the currentPath
+        renderList(items);
+        document.getElementById('path-display').textContent = path;
+        renderBackButton();
+    }
+
+    function renderList(items) {
+        const list = document.getElementById('file-list');
+        list.innerHTML = '';
+
+        if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent = '- EMPTY -';
+            list.appendChild(empty);
+            return;
+        }
+
+        items.forEach(item => {
+            const li = document.createElement('li');
+
+
+            const nameWrap = document.createElement('div'); // will bundle tag + name together here.
+            nameWrap.className = 'item-name';
+
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+
+            const nameText = document.createElement('span');
+            nameText.className = 'name-text';
+            nameText.textContent = item.name;
+
+            if (item.directory) {
+                li.classList.add('folder');
+                tag.textContent = 'DIR'; // specifically for directories
+                li.onclick = () => loadFolder(item.path); // when clicked, invoke loadFolder method.
+            } else {
+                li.onclick = () => handleFileTap(item);
+                const ext = item.name.includes('.') ? item.name.split('.').pop().toUpperCase() : 'FILE';
+                tag.textContent = ext.slice(0,4); // capped at 4 chars, probably change.
+            }
+
+
+            nameWrap.appendChild(tag);
+            nameWrap.appendChild(nameText);
+            const size = document.createElement('span');
+            size.className = 'size';
+            size.textContent = formatSize(item.sizeBytes);
+
+
+            li.appendChild(nameWrap); // tag + name
+
+            list.appendChild(li);
+        });
+    }
+    async function handleFileTap(item) {
+        const url = '/api/public-share/download?file=' + encodeURIComponent(item.path);
+        if (isVideo(item.name)) {
+            openVideoView(url, item.name);
+        } else {
+            triggerFileDownload(url, item.name);
+            // const link = document.createElement('a');
+            // link.href = url;
+            // link.download = item.name;
+            // document.body.appendChild(link);
+            // link.click();
+            // link.remove();
+        }
+
+
+    }
+
+    let currentVideo = null;
+    function openVideoView(url, name) {
+        try {
+            const video = document.getElementById('video-player');
+            video.src = url;
+            document.getElementById('video-name').textContent = name;
+            document.getElementById('video-modal').classList.remove('hidden');
+            video.load();
+            video.play().catch(err => {
+                console.log("Video failed to play: ", err);
+            })
+            currentVideo = {url, name};
+
+
+
+
+        } catch (err) {
+            console.log(err);
+        }
+    }
+    document.getElementById('download-video-btn').addEventListener('click', () => {
+        if (currentVideo) {
+            triggerFileDownload(currentVideo.url, currentVideo.name);
+        }
+    });
+    document.getElementById('close-video-btn').addEventListener('click', () => {
+        const video = document.getElementById('video-player');
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+        document.getElementById('video-modal').classList.add('hidden');
+    });
+    function triggerFileDownload(url, name) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+    }
+    function isVideo(name) {
+        const fileExt = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+
+        const extensions = /^(mp4|mov|avi|mkv|webm)$/i;
+
+        return extensions.test(fileExt);
+
+
+    }
+    // helper function to convert bytes to readable format.
+    function formatSize(bytes) {
+        if (bytes === 0) return '';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes, unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length -1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        return size.toFixed(unitIndex === 0 ? 0 : 1)  + ' ' + units[unitIndex];
+    }
+    function renderBackButton() {
+        const container = document.getElementById('back-btn-container');
+        container.innerHTML = '';
+
+        const btn = document.createElement('button');
+        btn.id = 'back-btn';
+
+        if (history.length > 0) { // we generate back button if path is greater than 0
+            btn.textContent = '← Back';
+            btn.onclick = () => {
+                const previousPath = history.pop();
+                currentPath = null;
+                loadFolder(previousPath);
+            };
+
+        } else { // if its 0 then we know we are on drives initial page
+            //btn.textContent = '← Drives';
+            btn.onclick = () => loadSharedItems();
+        }
+        container.appendChild(btn);
+    }
+
+    loadSharedItems();
+
+
+
+</script>
+</body>

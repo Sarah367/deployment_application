@@ -1,0 +1,11 @@
+.modal-box.video-modal-box {
+    max-width: 480px;
+}
+
+.video-player {
+    width: 100%;
+    max-height: 60vh;
+    background: #000;
+    border-radius: 2px;
+    margin-bottom: 16px;
+}
